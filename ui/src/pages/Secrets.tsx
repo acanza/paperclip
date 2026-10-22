@@ -827,6 +827,10 @@ export function Secrets() {
     () => secrets.find((secret) => secret.id === usageDialogSecretId) ?? null,
     [secrets, usageDialogSecretId],
   );
+  const defaultCreateProviderId: SecretProvider =
+    providerConfigs.find(
+      (config) => config.isDefault && !getProviderConfigBlockReason(config),
+    )?.provider ?? "local_encrypted";
   const selectedCreateProvider = useMemo(
     () => providers.find((provider) => provider.id === createForm.provider) ?? null,
     [providers, createForm.provider],
@@ -1029,10 +1033,7 @@ export function Secrets() {
 
   function openCreateSecret() {
     const prefix = folderPath ? `${folderPath}/` : null;
-    const defaultProviderId: SecretProvider =
-      providerConfigs.find(
-        (config) => config.isDefault && !getProviderConfigBlockReason(config),
-      )?.provider ?? "local_encrypted";
+    const defaultProviderId = defaultCreateProviderId;
     setEditingDefinition(null);
     setCreateNamePrefix(prefix);
     setSecretValueProvider("company");
@@ -2843,6 +2844,7 @@ export function Secrets() {
                         )}
                       >
                         {provider.label}
+                        {provider.id === defaultCreateProviderId ? " (default)" : ""}
                         {provider.configured === false &&
                         !getSelectableProviderConfig(providerConfigs, provider.id)
                           ? " (deployment default missing)"
