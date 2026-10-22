@@ -1029,6 +1029,10 @@ export function Secrets() {
 
   function openCreateSecret() {
     const prefix = folderPath ? `${folderPath}/` : null;
+    const defaultProviderId: SecretProvider =
+      providerConfigs.find(
+        (config) => config.isDefault && !getProviderConfigBlockReason(config),
+      )?.provider ?? "local_encrypted";
     setEditingDefinition(null);
     setCreateNamePrefix(prefix);
     setSecretValueProvider("company");
@@ -1043,8 +1047,11 @@ export function Secrets() {
       description: "",
       usageGuidance: "",
       externalRef: "",
-      provider: "local_encrypted",
-      providerConfigId: getDefaultProviderConfigId(providerConfigs, "local_encrypted"),
+      provider: defaultProviderId,
+      providerConfigId: getDefaultProviderConfigId(
+        providerConfigs,
+        defaultProviderId,
+      ),
     });
     setCreateOpen(true);
   }
