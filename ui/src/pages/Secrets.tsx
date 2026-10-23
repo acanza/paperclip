@@ -3606,7 +3606,6 @@ export function ProviderVaultsTab({
                 {provider?.label ?? id.replaceAll("_", " ")}
                 {isDefault ? " (default)" : ""}
               </span>
-              <span className="truncate">{provider?.label ?? id.replaceAll("_", " ")}</span>
             </a>
           ))}
         </nav>
