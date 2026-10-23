@@ -465,6 +465,62 @@ describe("Secrets page layout", () => {
     });
   });
 
+  it("marks Local encrypted as default only when no other provider vault is default", async () => {
+    const root = createRoot(container);
+    const renderVaults = (configs: CompanySecretProviderConfig[]) => (
+      <ProviderVaultsTab
+        providers={providers}
+        providerConfigs={configs}
+        loading={false}
+        error={null}
+        onRetry={vi.fn()}
+        onCreate={vi.fn()}
+        onEdit={vi.fn()}
+        onDisable={vi.fn()}
+        onRemove={vi.fn()}
+        onSetDefault={vi.fn()}
+        onHealthCheck={vi.fn()}
+        onImportSecrets={vi.fn()}
+        pendingActionId={null}
+      />
+    );
+    const localVaults = providerConfigs.map((config) => ({
+      ...config,
+      isDefault: false,
+    })) as CompanySecretProviderConfig[];
+
+    await act(async () => {
+      root.render(renderVaults(localVaults));
+    });
+    await flushReact();
+
+    expect(
+      container.querySelector("#provider-vaults-local_encrypted h2")
+        ?.textContent,
+    ).toBe("Local encrypted (default)");
+
+    await act(async () => {
+      root.render(
+        renderVaults(
+          localVaults.map((config) => ({
+            ...config,
+            isDefault: config.provider === "aws_secrets_manager",
+          })),
+        ),
+      );
+    });
+    await flushReact();
+
+    expect(
+      container.querySelector("#provider-vaults-local_encrypted h2")
+        ?.textContent,
+    ).toBe("Local encrypted");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it("refreshes existing AWS secrets from a provider vault card", async () => {
     const root = await renderSecrets(container);
 
