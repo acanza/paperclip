@@ -828,6 +828,16 @@ export function Secrets() {
     [secrets, usageDialogSecretId],
   );
   const defaultCreateProviderId: SecretProvider =
+    PROVIDER_ORDER.find(
+      (provider) =>
+        provider !== "local_encrypted" &&
+        providerConfigs.some(
+          (config) =>
+            config.provider === provider &&
+            config.isDefault &&
+            !getProviderConfigBlockReason(config),
+        ),
+    ) ??
     providerConfigs.find(
       (config) => config.isDefault && !getProviderConfigBlockReason(config),
     )?.provider ?? "local_encrypted";

@@ -941,6 +941,59 @@ describe("Secrets page layout", () => {
     });
   });
 
+  it("prefers a usable non-local default vault when creating a secret", async () => {
+    mockSecretsApi.providerConfigs.mockResolvedValue([
+      { ...providerConfigs[0], isDefault: true },
+      { ...providerConfigs[1], isDefault: true },
+    ] as CompanySecretProviderConfig[]);
+    mockSecretsApi.create.mockResolvedValue(
+      makeCompanySecret({
+        provider: "aws_secrets_manager",
+        providerConfigId: "vault-aws",
+      }),
+    );
+    const root = await renderSecrets(container);
+
+    const newSecretButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("New secret"),
+    ) as HTMLButtonElement | undefined;
+    await act(async () => {
+      newSecretButton?.click();
+    });
+    await flushReact();
+
+    expect((document.getElementById("new-secret-provider") as HTMLSelectElement).value).toBe(
+      "aws_secrets_manager",
+    );
+    expect((document.getElementById("new-secret-vault") as HTMLSelectElement).value).toBe(
+      "vault-aws",
+    );
+
+    await act(async () => {
+      setInputValue(document.getElementById("new-secret-name") as HTMLInputElement, "AWS test token");
+      setTextareaValue(document.getElementById("new-secret-value") as HTMLTextAreaElement, "secret-value");
+    });
+    const createButton = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Create secret",
+    ) as HTMLButtonElement | undefined;
+    await act(async () => {
+      createButton?.click();
+    });
+    await flushReact();
+
+    expect(mockSecretsApi.create).toHaveBeenCalledWith(
+      "company-1",
+      expect.objectContaining({
+        provider: "aws_secrets_manager",
+        providerConfigId: "vault-aws",
+      }),
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it("explains AWS managed secret creation failures with actionable safe details", async () => {
     const rawProviderMessage =
       "AccessDeniedException: arn:aws:sts::123456789012:assumed-role/prod/Paperclip is not authorized";
