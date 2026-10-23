@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
@@ -690,6 +690,7 @@ export function Secrets() {
   );
   const [usageDialogSecretId, setUsageDialogSecretId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const createProviderAutoDefaultRef = useRef(false);
   const [importOpen, setImportOpen] = useState(false);
   const [importInitialVaultId, setImportInitialVaultId] = useState<string | null>(null);
   const [secretValueProvider, setSecretValueProvider] = useState<SecretValueProvider>("company");
@@ -1044,6 +1045,7 @@ export function Secrets() {
   function openCreateSecret() {
     const prefix = folderPath ? `${folderPath}/` : null;
     const defaultProviderId = defaultCreateProviderId;
+    createProviderAutoDefaultRef.current = true;
     setEditingDefinition(null);
     setCreateNamePrefix(prefix);
     setSecretValueProvider("company");
@@ -1068,6 +1070,7 @@ export function Secrets() {
   }
 
   function openEditDefinition(definition: UserSecretDefinition) {
+    createProviderAutoDefaultRef.current = false;
     setEditingDefinition(definition);
     setCreateNamePrefix(null);
     setSecretValueProvider("user");
@@ -1385,6 +1388,18 @@ export function Secrets() {
       });
     },
   });
+
+  useEffect(() => {
+    if (!createOpen || !createProviderAutoDefaultRef.current) return;
+    if (providerConfigsQuery.isPending) return;
+    createProviderAutoDefaultRef.current = false;
+    if (defaultCreateProviderId === createForm.provider) return;
+    setCreateForm((form) => ({
+      ...form,
+      provider: defaultCreateProviderId,
+      providerConfigId: getDefaultProviderConfigId(providerConfigs, defaultCreateProviderId),
+    }));
+  }, [createOpen, createForm.provider, defaultCreateProviderId, providerConfigs, providerConfigsQuery.isPending]);
 
   useEffect(() => {
     if (!createOpen || providers.length === 0) return;
@@ -2832,6 +2847,7 @@ export function Secrets() {
                     onChange={(event) =>
                       setCreateForm((current) => {
                         const provider = event.target.value as SecretProvider;
+                        createProviderAutoDefaultRef.current = false;
                         return {
                           ...current,
                           provider,
